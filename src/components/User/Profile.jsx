@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+// import DashboardNav from "../DashboardNav/DashboardNav";
+import DashboardNav from "../DashboardNav";
 
 const Button = ({ children, onClick, className = "" }) => (
   <button
@@ -54,14 +56,19 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
-      <div className="max-w-2xl w-full">
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Static Sidebar */}
+      <DashboardNav role="candidate" />
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto p-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
+          className="max-w-3xl mx-auto"
         >
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-10">
             <h1 className="text-4xl font-bold text-gray-900">Profile</h1>
             <Button onClick={() => setIsEditing(!isEditing)}>
               {isEditing ? "Cancel" : "Edit Profile"}
@@ -71,7 +78,7 @@ const Profile = () => {
           <Card>
             {/* Profile Header */}
             <div className="flex items-center gap-6 mb-8">
-              <div className="w-24 h-24 rounded-full bg-linear-to-br from-blue-600 to-indigo-400 flex items-center justify-center text-4xl font-bold text-white">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-600 to-indigo-400 flex items-center justify-center text-4xl font-bold text-white shadow-md">
                 {profile?.name?.charAt(0)?.toUpperCase() || "U"}
               </div>
               <div>
@@ -84,63 +91,25 @@ const Profile = () => {
 
             {/* Form Fields */}
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700">
-                  Full Name
-                </label>
-                <Input
-                  disabled={!isEditing}
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700">
-                  Email
-                </label>
-                <Input
-                  disabled={!isEditing}
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700">
-                  GitHub Profile
-                </label>
-                <Input
-                  disabled={!isEditing}
-                  placeholder="https://github.com/username"
-                  value={formData.github}
-                  onChange={(e) => setFormData({ ...formData, github: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700">
-                  LinkedIn Profile
-                </label>
-                <Input
-                  disabled={!isEditing}
-                  placeholder="https://linkedin.com/in/username"
-                  value={formData.linkedin}
-                  onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700">
-                  Portfolio Website
-                </label>
-                <Input
-                  disabled={!isEditing}
-                  placeholder="https://yourportfolio.com"
-                  value={formData.portfolio}
-                  onChange={(e) => setFormData({ ...formData, portfolio: e.target.value })}
-                />
-              </div>
+              {[
+                { label: "Full Name", key: "name" },
+                { label: "Email", key: "email" },
+                { label: "GitHub Profile", key: "github", placeholder: "https://github.com/username" },
+                { label: "LinkedIn Profile", key: "linkedin", placeholder: "https://linkedin.com/in/username" },
+                { label: "Portfolio Website", key: "portfolio", placeholder: "https://yourportfolio.com" },
+              ].map(({ label, key, placeholder }) => (
+                <div key={key}>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">
+                    {label}
+                  </label>
+                  <Input
+                    disabled={!isEditing}
+                    placeholder={placeholder}
+                    value={formData[key]}
+                    onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                  />
+                </div>
+              ))}
             </div>
 
             {/* Save Button */}

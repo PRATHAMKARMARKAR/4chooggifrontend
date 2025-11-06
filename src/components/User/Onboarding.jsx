@@ -40,8 +40,25 @@ const Onboarding = () => {
     experience: "",
     locations: [],
     enableAutoApply: true,
+    resume: null, // ✅ Store resume file info
   });
   const [skillInput, setSkillInput] = useState("");
+
+  // ✅ File Upload Handler
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const allowedTypes = [
+      "application/pdf",
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Please upload only PDF or DOC files.");
+      return;
+    }
+
+    setData({ ...data, resume: file });
+  };
 
   const handleAddSkill = () => {
     if (skillInput.trim()) {
@@ -70,16 +87,44 @@ const Onboarding = () => {
         "Upload your resume for AI to analyze and match with opportunities.",
       content: (
         <div className="space-y-4">
-          <div className="border-2 border-dashed border-blue-400 rounded-lg p-8 text-center hover:border-blue-600 transition-colors cursor-pointer">
+          <label
+            htmlFor="resumeUpload"
+            className="border-2 border-dashed border-blue-400 rounded-lg p-8 text-center hover:border-blue-600 transition-colors cursor-pointer block"
+          >
             <div className="text-4xl mb-2">📄</div>
             <p className="text-gray-800 font-medium mb-1">
-              Drop your resume here
+              {data.resume ? data.resume.name : "Drop your resume here"}
             </p>
-            <p className="text-gray-500 text-sm">PDF or DOC format</p>
-          </div>
+            <p className="text-gray-500 text-sm">
+              {data.resume
+                ? `${(data.resume.size / 1024).toFixed(1)} KB`
+                : "PDF or DOC format"}
+            </p>
+            <input
+              id="resumeUpload"
+              type="file"
+              accept=".pdf,.doc,.docx"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+          </label>
+
+          {data.resume && (
+            <div className="flex items-center justify-between bg-gray-50 border border-gray-200 px-4 py-2 rounded-md">
+              <span className="text-gray-700 truncate">{data.resume.name}</span>
+              <Button
+                variant="outline"
+                className="text-sm"
+                onClick={() => setData({ ...data, resume: null })}
+              >
+                Remove
+              </Button>
+            </div>
+          )}
         </div>
       ),
     },
+    // Rest of your steps unchanged ⬇️
     {
       title: "Job Preferences",
       description: "Tell us what kind of role you're looking for.",
@@ -203,9 +248,7 @@ const Onboarding = () => {
                 />
               ))}
             </div>
-            <p className="text-sm text-gray-500">
-              Step {currentStep} of 4
-            </p>
+            <p className="text-sm text-gray-500">Step {currentStep} of 4</p>
           </div>
 
           {/* Step content */}

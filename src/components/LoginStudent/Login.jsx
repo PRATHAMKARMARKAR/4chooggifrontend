@@ -1,6 +1,42 @@
-import React from "react";
+import React, { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    try {
+      const response = await axios.post("", {
+        email,
+        password,
+      });
+
+      const { role, token } = response.data;
+
+      // Save token if needed
+      localStorage.setItem("authToken", token);
+      localStorage.setItem("userRole", role);
+
+      // Navigate based on role
+      if (role === "USER") {
+        navigate("/user/dashboard");
+      } else if (role === "EMPLOYER") {
+        navigate("/employer/dashboard");
+      } else {
+        setError("Invalid role detected.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Invalid email or password.");
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#fff8f8]">
       <div className="text-center">
@@ -8,7 +44,7 @@ const Login = () => {
         <p className="text-gray-500 mb-6">Sign in to your account</p>
 
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm px-8 py-8 w-[380px] mx-auto">
-          <form className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-5">
             <div className="text-left">
               <label
                 htmlFor="email"
@@ -19,6 +55,8 @@ const Login = () => {
               <input
                 id="email"
                 type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0a0a52] focus:border-[#0a0a52] transition"
@@ -35,11 +73,17 @@ const Login = () => {
               <input
                 id="password"
                 type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0a0a52] focus:border-[#0a0a52] transition"
               />
             </div>
+
+            {error && (
+              <p className="text-red-500 text-sm text-left">{error}</p>
+            )}
 
             <button
               type="submit"

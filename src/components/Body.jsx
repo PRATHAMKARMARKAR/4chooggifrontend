@@ -12,6 +12,7 @@ import PostJob from './Company/PostJob.jsx';
 import SettingsJob from './Company/Settings.jsx';
 import CompanyLayout from './Company/CompanyLayout.jsx';
 import CompanyDashboard from './Company/CompanyDashboard.jsx';
+import CandidateDashboard from './User/CandidateDashboard.jsx';
 const Body = () => {
     const approuter = createBrowserRouter([
         {path:"/",element:<Home/>},
@@ -23,9 +24,10 @@ const Body = () => {
        {path:"/Settings",element:<Settings/>},
        {path:"/Applicants",element:<Applicants/>},
         {path:"/PostJob",element:<PostJob/>},
-        {path:"SettingsJob",element:<SettingsJob/>},
-         {path:"CompanyLayout",element:<CompanyLayout/>},
-         {path:"CompanyDashboard",element:<CompanyDashboard/>}
+        {path:"/SettingsJob",element:<SettingsJob/>},
+         {path:"/CompanyLayout",element:<CompanyLayout/>},
+         {path:"/CompanyDashboard",element:<CompanyDashboard/>},
+           {path:"/CandidateDashboard",element:<CandidateDashboard/>}
 
 
 

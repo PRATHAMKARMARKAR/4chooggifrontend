@@ -1,12 +1,12 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 const Hero = () => {
-  // Scroll to the next section smoothly
+  const navigate = useNavigate();
+
   const handleScroll = () => {
     const nextSection = document.getElementById("how-it-works");
-    if (nextSection) {
-      nextSection.scrollIntoView({ behavior: "smooth" });
-    }
+    if (nextSection) nextSection.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
@@ -25,21 +25,25 @@ const Hero = () => {
         </p>
 
         <div className="mt-10 flex justify-center gap-5">
-          <button className="px-6 py-3 rounded-lg text-white bg-gradient-to-r from-[#1f3bff] to-[#2b9bff] shadow-soft-lg">
+          <button
+            onClick={() => navigate("/signup")}
+            className="px-6 py-3 rounded-lg text-white bg-gradient-to-r from-[#1f3bff] to-[#2b9bff] shadow-soft-lg"
+          >
             Get Started as Candidate
           </button>
-          <button className="px-6 py-3 rounded-lg text-primary border border-primary/20 bg-white/50">
+          <button
+            onClick={() => navigate("/login")}
+            className="px-6 py-3 rounded-lg text-primary border border-primary/20 bg-white/50"
+          >
             Post a Job
           </button>
         </div>
 
-        {/* Scroll Button */}
         <div
           onClick={handleScroll}
           className="mt-12 text-sm text-muted cursor-pointer hover:text-primary transition-colors duration-300 flex flex-col items-center gap-1"
         >
           <span>↓ Scroll to explore</span>
-          {/* <span className="animate-bounce text-lg">⬇️</span> */}
         </div>
       </div>
     </section>

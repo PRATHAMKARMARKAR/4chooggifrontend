@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axios from "axios";
 import { motion } from "framer-motion";
 
 const Button = ({ children, onClick, variant = "default", className = "" }) => {
@@ -40,8 +41,71 @@ const Onboarding = () => {
     experience: "",
     locations: [],
     enableAutoApply: true,
+    resumeURL: "", // ✅ Store uploaded resume URL
   });
   const [skillInput, setSkillInput] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  const userId = localStorage.getItem("userId");
+  const token = localStorage.getItem("authToken");
+
+  // ✅ Resume Upload Handler (integrated with backend logic)
+  const handleResumeUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return alert("Please select a file");
+
+    const allowedTypes = [
+      "application/pdf",
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Please upload only PDF or DOC files.");
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      // Step 1: Get signed URL
+      const { data: signed } = await axios.post(
+        "http://localhost:5000/api/resumes/signed-url",
+        {
+          employeeId: userId,
+          fileName: file.name,
+          fileType: file.type,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // Step 2: Upload to GCS
+      await axios.put(signed.uploadUrl, file, {
+        headers: { "Content-Type": file.type },
+      });
+
+      // Step 3: Save metadata
+      const saveRes = await axios.post(
+        "http://localhost:5000/api/resumes/save",
+        {
+          employeeId: userId,
+          resumeUrl: signed.publicUrl,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const uploadedURL = saveRes.data.resumeUrl || signed.publicUrl;
+
+      setData({ ...data, resumeURL: uploadedURL });
+      alert("✅ Resume uploaded successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("❌ Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleAddSkill = () => {
     if (skillInput.trim()) {
@@ -70,13 +134,54 @@ const Onboarding = () => {
         "Upload your resume for AI to analyze and match with opportunities.",
       content: (
         <div className="space-y-4">
-          <div className="border-2 border-dashed border-blue-400 rounded-lg p-8 text-center hover:border-blue-600 transition-colors cursor-pointer">
+          <label
+            htmlFor="resumeUpload"
+            className="border-2 border-dashed border-blue-400 rounded-lg p-8 text-center hover:border-blue-600 transition-colors cursor-pointer block"
+          >
             <div className="text-4xl mb-2">📄</div>
             <p className="text-gray-800 font-medium mb-1">
-              Drop your resume here
+              {data.resumeURL
+                ? "Resume uploaded successfully!"
+                : "Drop your resume here"}
             </p>
-            <p className="text-gray-500 text-sm">PDF or DOC format</p>
-          </div>
+            <p className="text-gray-500 text-sm">
+              {uploading
+                ? "Uploading..."
+                : data.resumeURL
+                ? "Uploaded!"
+                : "PDF or DOC format"}
+            </p>
+            <input
+              id="resumeUpload"
+              type="file"
+              accept=".pdf,.doc,.docx"
+              onChange={handleResumeUpload}
+              className="hidden"
+            />
+          </label>
+
+          {data.resumeURL && (
+            <div className="flex flex-col items-center gap-2 bg-gray-50 border border-gray-200 px-4 py-2 rounded-md">
+              <p className="text-gray-700 text-sm">
+                ✅ Uploaded Resume:{" "}
+                <a
+                  href={data.resumeURL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline"
+                >
+                  View Resume
+                </a>
+              </p>
+              <Button
+                variant="outline"
+                className="text-sm"
+                onClick={() => setData({ ...data, resumeURL: "" })}
+              >
+                Remove
+              </Button>
+            </div>
+          )}
         </div>
       ),
     },
@@ -92,9 +197,7 @@ const Onboarding = () => {
             <Input
               placeholder="e.g., Senior Software Engineer"
               value={data.jobTitle}
-              onChange={(e) =>
-                setData({ ...data, jobTitle: e.target.value })
-              }
+              onChange={(e) => setData({ ...data, jobTitle: e.target.value })}
             />
           </div>
           <div>
@@ -103,9 +206,7 @@ const Onboarding = () => {
             </label>
             <select
               value={data.experience}
-              onChange={(e) =>
-                setData({ ...data, experience: e.target.value })
-              }
+              onChange={(e) => setData({ ...data, experience: e.target.value })}
               className="w-full px-4 py-2 rounded-lg border border-gray-300 text-gray-800 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             >
               <option value="">Select...</option>
@@ -203,9 +304,7 @@ const Onboarding = () => {
                 />
               ))}
             </div>
-            <p className="text-sm text-gray-500">
-              Step {currentStep} of 4
-            </p>
+            <p className="text-sm text-gray-500">Step {currentStep} of 4</p>
           </div>
 
           {/* Step content */}

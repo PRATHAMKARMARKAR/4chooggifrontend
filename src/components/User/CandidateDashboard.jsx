@@ -38,7 +38,7 @@ export default function CandidateDashboard() {
   ]
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-[#f8faff] to-[#eef1ff]">
+    <div className="flex min-h-screen bg-linear-to-br from-[#f8faff] to-[#eef1ff]">
       {/* Sidebar */}
       <DashboardNav items={navItems} role="candidate" />
 

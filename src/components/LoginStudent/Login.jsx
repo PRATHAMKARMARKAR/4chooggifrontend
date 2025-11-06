@@ -12,12 +12,12 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      const response = await axios.post("", {
+      const response = await axios.post("http://localhost:3000/api/users/login", {
         email,
         password,
       });
-
-      const { role, token } = response.data;
+console.log(response.data.data.role);
+      const { role, token } = response.data.data;
 
       // Save token if needed
       localStorage.setItem("authToken", token);
@@ -25,7 +25,7 @@ const Login = () => {
 
       // Navigate based on role
       if (role === "USER") {
-        navigate("/user/dashboard");
+        navigate("/CandidateDashboard");
       } else if (role === "EMPLOYER") {
         navigate("/employer/dashboard");
       } else {

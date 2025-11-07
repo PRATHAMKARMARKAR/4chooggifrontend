@@ -1,34 +1,33 @@
 import React, { useState } from "react"
 import { motion } from "framer-motion"
-
-// Simple Button component
+import DashboardNav from "../DashboardNav"
+import CompanyLayout from "./CompanyLayout"
+// Reusable Button Component
 const Button = ({ children, onClick, variant = "default", size = "md", className = "" }) => {
-  const baseStyle =
-    "rounded-md font-medium transition-colors duration-200 focus:outline-none"
-  const sizeStyle = {
+  const base =
+    "rounded-md font-medium transition duration-200 focus:outline-none flex items-center justify-center"
+  const sizes = {
     sm: "px-3 py-1 text-sm",
-    md: "px-4 py-2",
+    md: "px-4 py-2 text-sm md:text-base",
   }
   const variants = {
-    default: "bg-blue-600 text-white hover:bg-blue-700",
-    outline: "border border-gray-400 text-gray-700 hover:bg-gray-100",
+    default: "bg-indigo-600 text-white hover:bg-indigo-700",
+    outline: "border border-gray-300 text-gray-700 hover:bg-gray-100",
   }
 
   return (
-    <button
-      onClick={onClick}
-      className={`${baseStyle} ${sizeStyle[size]} ${variants[variant]} ${className}`}
-    >
+    <button onClick={onClick} className={`${base} ${sizes[size]} ${variants[variant]} ${className}`}>
       {children}
     </button>
   )
 }
 
-// Simple Card component
+// Reusable Card Component
 const Card = ({ children, className = "" }) => (
-  <div className={`rounded-lg border shadow-sm ${className}`}>{children}</div>
+  <div className={`rounded-xl border bg-white shadow-sm ${className}`}>{children}</div>
 )
 
+// Mock Data
 const mockApplicants = [
   {
     id: "1",
@@ -68,7 +67,7 @@ const mockApplicants = [
   },
 ]
 
-const Applicants = () => {
+export default function Applicants() {
   const [filterStatus, setFilterStatus] = useState("all")
 
   const filteredApplicants =
@@ -97,95 +96,102 @@ const Applicants = () => {
     return "text-yellow-600"
   }
 
+  const navItems = [
+    { label: "Dashboard", href: "/company" },
+    { label: "Post Job", href: "/company/post-job" },
+    { label: "Applicants", href: "/company/applicants" },
+    { label: "Settings", href: "/company/settings" },
+  ]
+
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h1 className="text-4xl font-bold mb-8">Applicants</h1>
+    <div className="flex min-h-screen bg-gradient-to-br from-[#f8faff] to-[#eef1ff]">
+      {/* Sidebar */}
+     <CompanyLayout role="EMPLOYER" />
 
-        {/* Filter Buttons */}
-        <div className="flex gap-2 mb-8 flex-wrap">
-          {["all", "new", "shortlisted", "hired", "rejected"].map((status) => (
-            <Button
-              key={status}
-              onClick={() => setFilterStatus(status)}
-              variant={filterStatus === status ? "default" : "outline"}
-              className={
-                filterStatus === status ? "bg-blue-600 hover:bg-blue-700" : ""
-              }
-            >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </Button>
-          ))}
-        </div>
+      {/* Main Content */}
+      <div className="flex-1 px-10 py-10 overflow-y-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-4xl font-bold text-gray-800">Applicants</h1>
+          </div>
 
-        {/* Applicants List */}
-        <div className="space-y-4">
-          {filteredApplicants.map((applicant, i) => (
-            <motion.div
-              key={applicant.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: i * 0.05 }}
-            >
-              <Card className="bg-white border-gray-200 p-6 hover:border-blue-400 transition-colors">
-                <div className="flex items-start justify-between gap-6 mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-600 to-purple-500 flex items-center justify-center text-sm font-bold text-white">
+          {/* Filter Buttons */}
+          <div className="flex gap-3 mb-10 flex-wrap">
+            {["all", "new", "shortlisted", "hired", "rejected"].map((status) => (
+              <Button
+                key={status}
+                onClick={() => setFilterStatus(status)}
+                variant={filterStatus === status ? "default" : "outline"}
+              >
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </Button>
+            ))}
+          </div>
+
+          {/* Applicants List */}
+          <div className="grid gap-6">
+            {filteredApplicants.map((applicant, i) => (
+              <motion.div
+                key={applicant.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: i * 0.05 }}
+              >
+                <Card className="p-6 hover:border-indigo-400 transition-colors">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-600 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
                         {applicant.name.charAt(0)}
                       </div>
                       <div>
-                        <h3 className="font-semibold">{applicant.name}</h3>
+                        <h3 className="text-lg font-semibold">{applicant.name}</h3>
                         <p className="text-sm text-gray-500">{applicant.role}</p>
                       </div>
                     </div>
+
+                    <div className="text-right">
+                      <div
+                        className={`text-xl font-bold ${getMatchScoreColor(
+                          applicant.matchScore
+                        )}`}
+                      >
+                        {applicant.matchScore}%
+                      </div>
+                      <p className="text-sm text-gray-500">Match Score</p>
+                    </div>
                   </div>
 
-                  <div className="text-right">
-                    <div
-                      className={`text-lg font-bold ${getMatchScoreColor(
-                        applicant.matchScore
+                  <p className="text-gray-600 mb-4">
+                    Applied for:{" "}
+                    <span className="font-medium text-gray-800">{applicant.appliedFor}</span>
+                  </p>
+
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
+                        applicant.status
                       )}`}
                     >
-                      {applicant.matchScore}%
+                      {applicant.status.charAt(0).toUpperCase() + applicant.status.slice(1)}
+                    </span>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        View Resume
+                      </Button>
+                      <Button size="sm">Update Status</Button>
                     </div>
-                    <p className="text-sm text-gray-500">Match Score</p>
                   </div>
-                </div>
-
-                <p className="text-gray-500 mb-4">
-                  Applied for: {applicant.appliedFor}
-                </p>
-
-                <div className="flex items-center justify-between">
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
-                      applicant.status
-                    )}`}
-                  >
-                    {applicant.status.charAt(0).toUpperCase() +
-                      applicant.status.slice(1)}
-                  </span>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      View Resume
-                    </Button>
-                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
-                      Update Status
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
     </div>
   )
 }
-
-export default Applicants

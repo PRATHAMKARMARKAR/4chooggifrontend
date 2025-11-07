@@ -1,27 +1,7 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import { motion } from "framer-motion";
-// import DashboardNav from "../DashboardNav/DashboardNav";
 import DashboardNav from "../DashboardNav";
-
-const Button = ({ children, onClick, className = "" }) => (
-  <button
-    onClick={onClick}
-    className={`px-4 py-2 rounded-md font-medium bg-blue-600 text-white hover:bg-blue-700 transition ${className}`}
-  >
-    {children}
-  </button>
-);
-
-const Input = ({ value, onChange, placeholder, disabled = false, className = "" }) => (
-  <input
-    type="text"
-    value={value}
-    onChange={onChange}
-    placeholder={placeholder}
-    disabled={disabled}
-    className={`w-full px-3 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50 ${className}`}
-  />
-);
 
 const Card = ({ children, className = "" }) => (
   <div className={`rounded-lg border shadow-sm p-8 bg-white ${className}`}>
@@ -31,36 +11,63 @@ const Card = ({ children, className = "" }) => (
 
 const Profile = () => {
   const [profile, setProfile] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    github: "",
-    linkedin: "",
-    portfolio: "",
-  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
+  // ✅ Fetch user profile on mount
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      const parsed = JSON.parse(userData);
-      setProfile(parsed);
-      setFormData(parsed);
-    }
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+
+        const userId = localStorage.getItem("userId");
+        const token = localStorage.getItem("authToken");
+
+        // 🧩 Replace with your real endpoint
+        const res = await axios.get(
+          `http://localhost:3000/api/users/addDetailsRegister`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        setProfile(res.data.data || res.data);
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+        setError("Failed to load profile. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
   }, []);
 
-  const handleSave = () => {
-    localStorage.setItem("user", JSON.stringify(formData));
-    setProfile(formData);
-    setIsEditing(false);
-  };
+  // ⏳ Loading
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-100 text-gray-700">
+        <p>Loading your profile...</p>
+      </div>
+    );
+  }
 
+  // ❌ Error
+  if (error) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-100 text-red-600">
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  // ✅ Show Profile Data
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Static Sidebar */}
+      {/* Sidebar */}
       <DashboardNav role="candidate" />
 
-      {/* Scrollable Content */}
+      {/* Main content */}
       <div className="flex-1 overflow-y-auto p-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -70,9 +77,6 @@ const Profile = () => {
         >
           <div className="flex items-center justify-between mb-10">
             <h1 className="text-4xl font-bold text-gray-900">Profile</h1>
-            <Button onClick={() => setIsEditing(!isEditing)}>
-              {isEditing ? "Cancel" : "Edit Profile"}
-            </Button>
           </div>
 
           <Card>
@@ -89,35 +93,88 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Form Fields */}
+            {/* Profile Details */}
             <div className="space-y-4">
-              {[
-                { label: "Full Name", key: "name" },
-                { label: "Email", key: "email" },
-                { label: "GitHub Profile", key: "github", placeholder: "https://github.com/username" },
-                { label: "LinkedIn Profile", key: "linkedin", placeholder: "https://linkedin.com/in/username" },
-                { label: "Portfolio Website", key: "portfolio", placeholder: "https://yourportfolio.com" },
-              ].map(({ label, key, placeholder }) => (
-                <div key={key}>
-                  <label className="block text-sm font-medium mb-2 text-gray-700">
-                    {label}
-                  </label>
-                  <Input
-                    disabled={!isEditing}
-                    placeholder={placeholder}
-                    value={formData[key]}
-                    onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
-                  />
-                </div>
-              ))}
-            </div>
+              <div>
+                <p className="text-sm text-gray-500">GitHub</p>
+                <a
+                  href={profile?.github}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline break-all"
+                >
+                  {profile?.github || "Not provided"}
+                </a>
+              </div>
 
-            {/* Save Button */}
-            {isEditing && (
-              <Button onClick={handleSave} className="w-full mt-6">
-                Save Changes
-              </Button>
-            )}
+              <div>
+                <p className="text-sm text-gray-500">LinkedIn</p>
+                <a
+                  href={profile?.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline break-all"
+                >
+                  {profile?.linkedin || "Not provided"}
+                </a>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500">Portfolio</p>
+                <a
+                  href={profile?.portfolio}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline break-all"
+                >
+                  {profile?.portfolio || "Not provided"}
+                </a>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500">Title</p>
+                <p className="text-gray-900">{profile?.title || "Not specified"}</p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500">Years of Experience</p>
+                <p className="text-gray-900">{profile?.yoe || "Not specified"}</p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500">Skills</p>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {profile?.skills?.length ? (
+                    profile.skills.map((s, i) => (
+                      <span
+                        key={i}
+                        className="px-3 py-1 bg-blue-100 border border-blue-300 rounded-full text-sm"
+                      >
+                        {s}
+                      </span>
+                    ))
+                  ) : (
+                    <p className="text-gray-600">No skills added</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500">Resume</p>
+                {profile?.resumeURL ? (
+                  <a
+                    href={profile.resumeURL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline break-all"
+                  >
+                    View Resume
+                  </a>
+                ) : (
+                  <p className="text-gray-600">No resume uploaded</p>
+                )}
+              </div>
+            </div>
           </Card>
         </motion.div>
       </div>

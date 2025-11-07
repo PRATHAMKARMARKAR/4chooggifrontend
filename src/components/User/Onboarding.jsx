@@ -1,273 +1,272 @@
 import React, { useState } from "react";
+import axios from "axios";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom"; // ✅ Import navigation hook
+import { resume } from "react-dom/server";
 
 const Button = ({ children, onClick, variant = "default", className = "" }) => {
-  const baseStyle =
-    "px-4 py-2 rounded-md font-medium transition-colors duration-200 focus:outline-none";
+  const base = "px-4 py-2 rounded-md font-medium transition-colors duration-200";
   const variants = {
     default: "bg-blue-600 text-white hover:bg-blue-700",
     outline: "border border-gray-400 text-gray-700 hover:bg-gray-100",
   };
   return (
-    <button
-      onClick={onClick}
-      className={`${baseStyle} ${variants[variant]} ${className}`}
-    >
+    <button onClick={onClick} className={`${base} ${variants[variant]} ${className}`}>
       {children}
     </button>
   );
 };
 
-const Input = ({ value, onChange, placeholder, onKeyPress, className = "" }) => (
+const Input = ({ value, onChange, placeholder, className = "" }) => (
   <input
     value={value}
     onChange={onChange}
     placeholder={placeholder}
-    onKeyPress={onKeyPress}
-    className={`w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none ${className}`}
+    className={`w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 ${className}`}
   />
 );
 
 const Card = ({ children, className = "" }) => (
-  <div className={`rounded-lg border shadow-sm ${className}`}>{children}</div>
+  <div className={`rounded-2xl border shadow-lg ${className}`}>{children}</div>
 );
 
 const Onboarding = () => {
+  const navigate = useNavigate(); // ✅ Initialize navigation
   const [currentStep, setCurrentStep] = useState(1);
-  const [data, setData] = useState({
-    jobTitle: "",
-    skills: [],
-    experience: "",
-    locations: [],
-    enableAutoApply: true,
-    resume: null, // ✅ Store resume file info
-  });
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [skillInput, setSkillInput] = useState("");
+  const [data, setData] = useState({
+    title: "",
+    skills: [],
+    yoe: "",
+    github: "",
+    linkedin: "",
+    portfolio: "",
+    autoApply: true,
+    resumeURL: "",
+  });
 
-  // ✅ File Upload Handler
-  const handleFileUpload = (e) => {
+  const userId = localStorage.getItem("userId");
+  const token = localStorage.getItem("authToken");
+
+  // ✅ Upload Resume
+  const handleResumeUpload = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) return alert("Please select a PDF.");
+    if (file.type !== "application/pdf") return alert("Only PDF allowed.");
 
-    const allowedTypes = [
-      "application/pdf",
-    ];
-    if (!allowedTypes.includes(file.type)) {
-      alert("Please upload only PDF or DOC files.");
-      return;
+    setUploading(true);
+    try {
+      const  res1  = await axios.post(
+        "http://localhost:3000/api/users/getSignedUrlResume",
+        { id: userId, fileType: "application/pdf" }
+      );
+      
+      
+      const uploadURL= res1.data.data.uploadURL;
+      const resumeURL = res1.data.data.resumeURL;
+  
+      
+      await axios.put(uploadURL, file, { headers: { "Content-Type": "application/pdf" } });
+
+      setData((prev) => ({ ...prev, resumeURL: publicURL }));
+      alert("✅ Resume uploaded!");
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Upload failed. Try again.");
+    } finally {
+      setUploading(false);
     }
-
-    setData({ ...data, resume: file });
   };
 
+  // ✅ Add & Remove skills
   const handleAddSkill = () => {
     if (skillInput.trim()) {
-      setData({ ...data, skills: [...data.skills, skillInput] });
+      setData({ ...data, skills: [...data.skills, skillInput.trim()] });
       setSkillInput("");
     }
   };
+  const handleRemoveSkill = (i) =>
+    setData({ ...data, skills: data.skills.filter((_, x) => x !== i) });
 
-  const handleRemoveSkill = (index) => {
-    setData({ ...data, skills: data.skills.filter((_, i) => i !== index) });
+  // ✅ Next step
+  const handleNext = () => setCurrentStep((s) => Math.min(s + 1, steps.length));
+
+  // ✅ Final API Call
+  const handleComplete = async () => {
+    setSaving(true);
+    try {
+      const payload = {
+        id: userId,
+        resumeURL: resumeURL,
+        title: data.title,
+        yoe: data.yoe,
+        skills: data.skills,
+        autoApply: data.autoApply,
+        github: data.github,
+        linkedin: data.linkedin,
+        portfolio: data.portfolio,
+      };
+
+      const res = await axios.post(
+        "http://localhost:3000/api/users/addDetails",
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.status === 200 || res.status === 201) {
+        console.log("✅ Saved:", res.data);
+        alert("🎉 Onboarding Complete!");
+        localStorage.setItem("onboarding", JSON.stringify(data));
+
+        // ✅ Navigate to login page
+        navigate("/login");
+      } else {
+        alert("Error: Unexpected response from server.");
+      }
+    } catch (err) {
+      console.error("❌ Save failed:", err);
+      alert("Error saving details.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleNext = () => {
-    if (currentStep < 4) setCurrentStep(currentStep + 1);
-  };
-
-  const handleComplete = () => {
-    localStorage.setItem("onboarding", JSON.stringify(data));
-    alert("Setup Complete! Redirecting to dashboard...");
-  };
-
-  const stepsContent = [
+  // ✅ Steps
+  const steps = [
     {
-      title: "Upload Your Resume",
-      description:
-        "Upload your resume for AI to analyze and match with opportunities.",
+      title: "Upload Resume",
       content: (
-        <div className="space-y-4">
+        <div>
           <label
             htmlFor="resumeUpload"
-            className="border-2 border-dashed border-blue-400 rounded-lg p-8 text-center hover:border-blue-600 transition-colors cursor-pointer block"
+            className="block border-2 border-dashed border-blue-400 rounded-lg p-6 text-center cursor-pointer"
           >
             <div className="text-4xl mb-2">📄</div>
-            <p className="text-gray-800 font-medium mb-1">
-              {data.resume ? data.resume.name : "Drop your resume here"}
-            </p>
-            <p className="text-gray-500 text-sm">
-              {data.resume
-                ? `${(data.resume.size / 1024).toFixed(1)} KB`
-                : "PDF or DOC format"}
+            <p>
+              {uploading
+                ? "Uploading..."
+                : data.resumeURL
+                ? "Resume Uploaded ✅"
+                : "Upload Resume PDF"}
             </p>
             <input
               id="resumeUpload"
               type="file"
-              accept=".pdf,.doc,.docx"
-              onChange={handleFileUpload}
+              accept=".pdf"
+              onChange={handleResumeUpload}
               className="hidden"
             />
           </label>
-
-          {data.resume && (
-            <div className="flex items-center justify-between bg-gray-50 border border-gray-200 px-4 py-2 rounded-md">
-              <span className="text-gray-700 truncate">{data.resume.name}</span>
-              <Button
-                variant="outline"
-                className="text-sm"
-                onClick={() => setData({ ...data, resume: null })}
-              >
-                Remove
-              </Button>
-            </div>
-          )}
-        </div>
-      ),
-    },
-    // Rest of your steps unchanged ⬇️
-    {
-      title: "Job Preferences",
-      description: "Tell us what kind of role you're looking for.",
-      content: (
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Target Job Title
-            </label>
-            <Input
-              placeholder="e.g., Senior Software Engineer"
-              value={data.jobTitle}
-              onChange={(e) =>
-                setData({ ...data, jobTitle: e.target.value })
-              }
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Years of Experience
-            </label>
-            <select
-              value={data.experience}
-              onChange={(e) =>
-                setData({ ...data, experience: e.target.value })
-              }
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 text-gray-800 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            >
-              <option value="">Select...</option>
-              <option value="0-2">0-2 years</option>
-              <option value="2-5">2-5 years</option>
-              <option value="5-10">5-10 years</option>
-              <option value="10+">10+ years</option>
-            </select>
-          </div>
         </div>
       ),
     },
     {
-      title: "Skills & Expertise",
-      description: "Add your key technical skills.",
+      title: "GitHub & LinkedIn",
       content: (
         <div className="space-y-4">
-          <div className="flex gap-2">
+          <Input
+            placeholder="GitHub URL"
+            value={data.github}
+            onChange={(e) => setData({ ...data, github: e.target.value })}
+          />
+          <Input
+            placeholder="LinkedIn URL"
+            value={data.linkedin}
+            onChange={(e) => setData({ ...data, linkedin: e.target.value })}
+          />
+          <Input
+            placeholder="Portfolio URL"
+            value={data.portfolio}
+            onChange={(e) => setData({ ...data, portfolio: e.target.value })}
+          />
+        </div>
+      ),
+    },
+    {
+      title: "Job Title & Experience",
+      content: (
+        <div className="space-y-4">
+          <Input
+            placeholder="Job Title (e.g., Backend Developer)"
+            value={data.title}
+            onChange={(e) => setData({ ...data, title: e.target.value })}
+          />
+          <select
+            value={data.yoe}
+            onChange={(e) => setData({ ...data, yoe: e.target.value })}
+            className="w-full px-4 py-2 border rounded-lg"
+          >
+            <option value="">Select Years of Experience</option>
+            <option value="0-5yrs">0-5yrs</option>
+            <option value="5-10yrs">5-10yrs</option>
+            <option value="10+yrs">10+yrs</option>
+          </select>
+        </div>
+      ),
+    },
+    {
+      title: "Skills",
+      content: (
+        <div>
+          <div className="flex gap-2 mb-3">
             <Input
               placeholder="Add a skill..."
               value={skillInput}
               onChange={(e) => setSkillInput(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleAddSkill()}
-              className="flex-1"
             />
             <Button onClick={handleAddSkill}>Add</Button>
           </div>
           <div className="flex flex-wrap gap-2">
             {data.skills.map((skill, i) => (
-              <motion.div
+              <span
                 key={i}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0 }}
-                className="px-3 py-1 rounded-full bg-blue-100 border border-blue-300 text-sm flex items-center gap-2"
+                className="px-3 py-1 bg-blue-100 border border-blue-300 rounded-full text-sm flex items-center gap-2"
               >
                 {skill}
                 <button
                   onClick={() => handleRemoveSkill(i)}
-                  className="hover:text-red-600 font-bold"
+                  className="font-bold hover:text-red-600"
                 >
                   ×
                 </button>
-              </motion.div>
+              </span>
             ))}
           </div>
         </div>
       ),
     },
     {
-      title: "Final Settings",
-      description: "Configure your preferences.",
+      title: "Auto Apply",
       content: (
-        <div className="space-y-4">
-          <label className="flex items-center gap-3 p-4 rounded-lg bg-gray-50 border border-gray-300 cursor-pointer hover:border-blue-400 transition-colors">
-            <input
-              type="checkbox"
-              checked={data.enableAutoApply}
-              onChange={(e) =>
-                setData({ ...data, enableAutoApply: e.target.checked })
-              }
-              className="w-5 h-5 rounded accent-blue-600"
-            />
-            <div>
-              <p className="font-medium text-gray-800">Enable Auto Apply</p>
-              <p className="text-sm text-gray-500">
-                Automatically apply to matching jobs
-              </p>
-            </div>
-          </label>
-        </div>
+        <label className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            checked={data.autoApply}
+            onChange={(e) => setData({ ...data, autoApply: e.target.checked })}
+          />
+          <span>Enable Auto Apply</span>
+        </label>
       ),
     },
   ];
 
-  const step = stepsContent[currentStep - 1];
+  const step = steps[currentStep - 1];
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-2xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          {/* Progress bar */}
-          <div className="mb-8">
-            <div className="flex gap-2 mb-4">
-              {[1, 2, 3, 4].map((s) => (
-                <div
-                  key={s}
-                  className={`flex-1 h-2 rounded-full transition-colors ${
-                    s <= currentStep ? "bg-blue-600" : "bg-gray-300"
-                  }`}
-                />
-              ))}
-            </div>
-            <p className="text-sm text-gray-500">Step {currentStep} of 4</p>
-          </div>
-
-          {/* Step content */}
-          <Card className="bg-white border-gray-200 p-8">
-            <motion.div
-              key={currentStep}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <h1 className="text-3xl font-bold mb-2 text-gray-900">
-                {step.title}
-              </h1>
-              <p className="text-gray-500 mb-8">{step.description}</p>
-              {step.content}
-            </motion.div>
-          </Card>
-
-          {/* Navigation buttons */}
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
+      <motion.div
+        key={currentStep}
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -40 }}
+        transition={{ duration: 0.4 }}
+        className="w-full max-w-2xl"
+      >
+        <Card className="p-8 bg-white">
+          <h2 className="text-2xl font-bold mb-4 text-center">{step.title}</h2>
+          {step.content}
           <div className="flex gap-4 mt-8">
             {currentStep > 1 && (
               <Button
@@ -278,24 +277,18 @@ const Onboarding = () => {
                 Back
               </Button>
             )}
-            {currentStep < 4 ? (
-              <Button
-                onClick={handleNext}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-              >
+            {currentStep < steps.length ? (
+              <Button onClick={handleNext} className="flex-1">
                 Next
               </Button>
             ) : (
-              <Button
-                onClick={handleComplete}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                Complete Setup
+              <Button onClick={handleComplete} className="flex-1">
+                {saving ? "Saving..." : "Complete Setup"}
               </Button>
             )}
           </div>
-        </motion.div>
-      </div>
+        </Card>
+      </motion.div>
     </div>
   );
 };

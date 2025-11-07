@@ -1,6 +1,7 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import axios from "axios";
 import {
   Briefcase,
   User,
@@ -11,14 +12,39 @@ import {
 
 export default function DashboardNav({ role = "candidate" }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
 
-  // Define navigation items here
+  // Navigation items
   const items = [
     { label: "Dashboard", href: "/CandidateDashboard", icon: LayoutDashboard },
     { label: "Profile", href: "/Profile", icon: Briefcase },
     { label: "Jobs Matches", href: "/Matches", icon: Bookmark },
     { label: "Settings", href: "/Settings", icon: Settings },
   ];
+
+  // ✅ Logout function
+  const handleLogout = async () => {
+    const token = localStorage.getItem("authToken");
+
+    try {
+      // 🧩 Call your backend logout API
+      await axios.post(
+        "http://localhost:3000/api/users/logout",
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (err) {
+      console.warn("Logout API failed, proceeding with local logout:", err.message);
+    } finally {
+      // Clear stored data
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("onboarding");
+
+      // Redirect to login
+      navigate("/login");
+    }
+  };
 
   return (
     <aside className="w-64 min-h-screen bg-gradient-to-b from-white/80 to-indigo-50/60 backdrop-blur-xl border-r border-gray-200 px-6 py-8 flex flex-col justify-between shadow-sm">
@@ -70,7 +96,10 @@ export default function DashboardNav({ role = "candidate" }) {
       <div className="text-xs text-gray-500 border-t pt-4">
         <p>Logged in as:</p>
         <p className="font-semibold capitalize text-gray-800">{role}</p>
-        <button className="mt-3 text-indigo-600 hover:text-indigo-800 font-medium transition">
+        <button
+          onClick={handleLogout}
+          className="mt-3 text-indigo-600 hover:text-indigo-800 font-medium transition"
+        >
           Log out
         </button>
       </div>

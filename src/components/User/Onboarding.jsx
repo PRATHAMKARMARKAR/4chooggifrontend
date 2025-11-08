@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom"; // ✅ Import navigation hook
-import { resume } from "react-dom/server";
+import { useNavigate } from "react-router-dom";
 
 const Button = ({ children, onClick, variant = "default", className = "" }) => {
-  const base = "px-4 py-2 rounded-md font-medium transition-colors duration-200";
+  const base =
+    "px-4 py-2 rounded-md font-medium transition-colors duration-200";
   const variants = {
     default: "bg-blue-600 text-white hover:bg-blue-700",
     outline: "border border-gray-400 text-gray-700 hover:bg-gray-100",
@@ -31,11 +31,13 @@ const Card = ({ children, className = "" }) => (
 );
 
 const Onboarding = () => {
-  const navigate = useNavigate(); // ✅ Initialize navigation
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [skillInput, setSkillInput] = useState("");
+  const [resumeURL, setResumeURL] = useState(""); // ✅ useState for resume URL
+
   const [data, setData] = useState({
     title: "",
     skills: [],
@@ -44,7 +46,6 @@ const Onboarding = () => {
     linkedin: "",
     portfolio: "",
     autoApply: true,
-    resumeURL: "",
   });
 
   const userId = localStorage.getItem("userId");
@@ -58,19 +59,23 @@ const Onboarding = () => {
 
     setUploading(true);
     try {
-      const  res1  = await axios.post(
+      const res1 = await axios.post(
         "http://localhost:3000/api/users/getSignedUrlResume",
         { id: userId, fileType: "application/pdf" }
       );
-      
-      
-      const uploadURL= res1.data.data.uploadURL;
-      const resumeURL = res1.data.data.resumeURL;
-  
-      
-      await axios.put(uploadURL, file, { headers: { "Content-Type": "application/pdf" } });
 
-      setData((prev) => ({ ...prev, resumeURL: publicURL }));
+      const uploadURL = res1.data.data.publicURL;
+      const fileResumeURL = res1.data.data.resumeURL;
+      console.log("hello"+uploadURL+fileResumeURL);
+   console.log(res1);
+   
+      // Upload to S3
+      await axios.put(uploadURL, file, {
+        headers: { "Content-Type": "application/pdf" },
+      });
+
+      // ✅ Store resume URL in state
+      setResumeURL(fileResumeURL);
       alert("✅ Resume uploaded!");
     } catch (err) {
       console.error("Upload failed:", err);
@@ -87,6 +92,7 @@ const Onboarding = () => {
       setSkillInput("");
     }
   };
+
   const handleRemoveSkill = (i) =>
     setData({ ...data, skills: data.skills.filter((_, x) => x !== i) });
 
@@ -99,7 +105,7 @@ const Onboarding = () => {
     try {
       const payload = {
         id: userId,
-        resumeURL: resumeURL,
+        resumeURL, // ✅ now from state
         title: data.title,
         yoe: data.yoe,
         skills: data.skills,
@@ -108,6 +114,8 @@ const Onboarding = () => {
         linkedin: data.linkedin,
         portfolio: data.portfolio,
       };
+
+      console.log("🟢 Sending payload:", payload);
 
       const res = await axios.post(
         "http://localhost:3000/api/users/addDetails",
@@ -119,14 +127,12 @@ const Onboarding = () => {
         console.log("✅ Saved:", res.data);
         alert("🎉 Onboarding Complete!");
         localStorage.setItem("onboarding", JSON.stringify(data));
-
-        // ✅ Navigate to login page
         navigate("/login");
       } else {
         alert("Error: Unexpected response from server.");
       }
     } catch (err) {
-      console.error("❌ Save failed:", err);
+      console.error("❌ Save failed:", err.response?.data || err.message);
       alert("Error saving details.");
     } finally {
       setSaving(false);
@@ -147,7 +153,7 @@ const Onboarding = () => {
             <p>
               {uploading
                 ? "Uploading..."
-                : data.resumeURL
+                : resumeURL
                 ? "Resume Uploaded ✅"
                 : "Upload Resume PDF"}
             </p>

@@ -104,7 +104,7 @@ export default function Applicants() {
   ]
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-[#f8faff] to-[#eef1ff]">
+    <div className="flex min-h-screen bg-linear-to-br from-[#f8faff] to-[#eef1ff]">
       {/* Sidebar */}
      <CompanyLayout role="EMPLOYER" />
 
@@ -145,7 +145,7 @@ export default function Applicants() {
                 <Card className="p-6 hover:border-indigo-400 transition-colors">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-600 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
+                      <div className="w-12 h-12 rounded-full bg-linear-to-br from-indigo-600 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
                         {applicant.name.charAt(0)}
                       </div>
                       <div>

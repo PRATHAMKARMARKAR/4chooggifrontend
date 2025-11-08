@@ -82,7 +82,7 @@ const Profile = () => {
           <Card>
             {/* Profile Header */}
             <div className="flex items-center gap-6 mb-8">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-600 to-indigo-400 flex items-center justify-center text-4xl font-bold text-white shadow-md">
+              <div className="w-24 h-24 rounded-full bg-linear-to-br from-blue-600 to-indigo-400 flex items-center justify-center text-4xl font-bold text-white shadow-md">
                 {profile?.name?.charAt(0)?.toUpperCase() || "U"}
               </div>
               <div>

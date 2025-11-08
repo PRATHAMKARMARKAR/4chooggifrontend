@@ -1,26 +1,29 @@
-import React, { useState } from "react"
-import axios from "axios"
-import { motion } from "framer-motion"
-import { useNavigate } from "react-router-dom"
+import React, { useState } from "react";
+import axios from "axios";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
-// Simple reusable UI components
+// ✅ Reusable Button Component
 const Button = ({ children, onClick, variant = "default", className = "", disabled }) => {
-  const base = "px-4 py-2 rounded-md font-medium transition-colors duration-200"
+  const base = "px-4 py-2 rounded-md font-medium transition-colors duration-200";
   const variants = {
     default: "bg-blue-600 text-white hover:bg-blue-700",
     outline: "border border-gray-400 text-gray-700 hover:bg-gray-100",
-  }
+  };
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`${base} ${variants[variant]} ${className} ${disabled ? "opacity-70 cursor-not-allowed" : ""}`}
+      className={`${base} ${variants[variant]} ${className} ${
+        disabled ? "opacity-70 cursor-not-allowed" : ""
+      }`}
     >
       {children}
     </button>
-  )
-}
+  );
+};
 
+// ✅ Reusable Input Component
 const Input = ({ value, onChange, placeholder, className = "" }) => (
   <input
     value={value}
@@ -28,83 +31,104 @@ const Input = ({ value, onChange, placeholder, className = "" }) => (
     placeholder={placeholder}
     className={`w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 ${className}`}
   />
-)
+);
 
+// ✅ Card Wrapper
 const Card = ({ children, className = "" }) => (
   <div className={`rounded-2xl border shadow-lg bg-white ${className}`}>{children}</div>
-)
+);
 
 const EmployerOnboarding = () => {
-  const navigate = useNavigate()
-  const [currentStep, setCurrentStep] = useState(1)
-  const [uploading, setUploading] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // ✅ Include idCardURL & uploadURL in state
   const [data, setData] = useState({
     companyName: "",
     companyLocation: "",
     position: "",
     linkedin: "",
     idCardURL: "",
-  })
+    uploadURL: "",
+  });
 
-  const userId = localStorage.getItem("userId")
-  const token = localStorage.getItem("authToken")
+  const userId = localStorage.getItem("userId");
 
   // ✅ Upload ID Card (PDF or Image)
   const handleIDCardUpload = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return alert("Please select an image or PDF.")
+    const file = e.target.files[0];
+    if (!file) return alert("Please select an image or PDF.");
     if (!["image/png", "image/jpeg", "application/pdf"].includes(file.type))
-      return alert("Only PNG, JPG, or PDF allowed.")
+      return alert("Only PNG, JPG, or PDF allowed.");
 
-    setUploading(true)
+    setUploading(true);
     try {
+      // Step 1: Request signed URL from backend
       const res = await axios.post("http://localhost:3000/api/employers/getSignedURLIDCard", {
         id: userId,
         fileType: file.type,
-      })
+      });
 
-      const uploadURL = res.data.data.uploadURL
-      const idCardURL = res.data.data.idCardURL
+      console.log("Signed URL Response:", res.data.data.publicURL);
 
-      await axios.put(uploadURL, file, { headers: { "Content-Type": file.type } })
-      setData((prev) => ({ ...prev, idCardURL }))
-      alert("✅ ID Card uploaded successfully!")
+      const uploadURL = res.data.data.uploadURL;
+      const idCardURL = res.data.data.publicURL;
+
+      // Step 2: Upload file to the storage
+      await axios.put(uploadURL, file, { headers: { "Content-Type": file.type } });
+
+      // ✅ Step 3: Save URLs in useState
+      setData((prev) => ({
+        ...prev,
+        uploadURL,
+        idCardURL,
+      }));
+
+      alert("✅ ID Card uploaded successfully!");
     } catch (err) {
-      console.error("Upload failed:", err)
-      alert("Upload failed. Try again.")
+      console.error("Upload failed:", err);
+      alert("Upload failed. Try again.");
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
-  }
+  };
 
   // ✅ Final API Call to Save Employer Info
   const handleComplete = async () => {
-    setSaving(true)
+    setSaving(true);
     try {
       const payload = {
         id: userId,
-        ...data,
-      }
+        idCardURL: data.idCardURL,
+        linkedin: data.linkedin,
+        companyName: data.companyName,
+        companyLocation: data.companyLocation,
+        position: data.position,
+      };
 
-      const res = await axios.post("http://localhost:3000/api/employers/addDetails", payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      console.log("🟢 Sending payload:", data.idCardURL);
+
+      const res = await axios.post(
+        "http://localhost:3000/api/employers/addDetailsRegister",
+        payload
+      );
 
       if (res.status === 200 || res.status === 201) {
-        alert("🎉 Employer Onboarding Complete!")
-        localStorage.setItem("employerOnboarding", JSON.stringify(data))
-        navigate("/login")
+        alert("🎉 Employer Onboarding Complete!");
+        localStorage.setItem("employerOnboarding", JSON.stringify(data));
+        navigate("/login");
       } else {
-        alert("Unexpected server response.")
+        alert("Unexpected server response.");
       }
     } catch (err) {
-      console.error("Save failed:", err)
-      alert("Error saving details.")
+      console.error("Save failed:", err);
+      alert("Error saving details.");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   // ✅ Steps for Employer Onboarding
   const steps = [
@@ -169,9 +193,9 @@ const EmployerOnboarding = () => {
         </div>
       ),
     },
-  ]
+  ];
 
-  const step = steps[currentStep - 1]
+  const step = steps[currentStep - 1];
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
@@ -209,7 +233,7 @@ const EmployerOnboarding = () => {
         </Card>
       </motion.div>
     </div>
-  )
-}
+  );
+};
 
-export default EmployerOnboarding
+export default EmployerOnboarding;

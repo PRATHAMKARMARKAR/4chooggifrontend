@@ -49,7 +49,7 @@ const Onboarding = () => {
   });
 
   const userId = localStorage.getItem("userId");
-  const token = localStorage.getItem("authToken");
+  // const token = localStorage.getItem("authToken");
 
   // ✅ Upload Resume
   const handleResumeUpload = async (e) => {
@@ -64,11 +64,10 @@ const Onboarding = () => {
         { id: userId, fileType: "application/pdf" }
       );
 
-      const uploadURL = res1.data.data.publicURL;
-      const fileResumeURL = res1.data.data.resumeURL;
+      const uploadURL = res1.data.data.uploadURL;
+      const fileResumeURL = res1.data.data.publicURL;
       console.log("hello"+uploadURL+fileResumeURL);
    console.log(res1);
-   
       // Upload to S3
       await axios.put(uploadURL, file, {
         headers: { "Content-Type": "application/pdf" },
@@ -103,25 +102,40 @@ const Onboarding = () => {
   const handleComplete = async () => {
     setSaving(true);
     try {
-      const payload = {
-        id: userId,
-        resumeURL, // ✅ now from state
-        title: data.title,
-        yoe: data.yoe,
-        skills: data.skills,
-        autoApply: data.autoApply,
-        github: data.github,
-        linkedin: data.linkedin,
-        portfolio: data.portfolio,
-      };
+   
 
-      console.log("🟢 Sending payload:", payload);
+      // console.log("🟢 Sending payload:", userId,resumeURL,data.title,data;
+      console.log("hello",{
+        
+  id: userId,
+  resumeURL: resumeURL,
+  title: data.title,
+  yoe: data.yoe,
+  skills: data.skills,
+  autoApply: data.autoApply,
+  github: data.github,
+  linkedin: data.linkedin,
+  portfolio: data.portfolio
+});
 
-      const res = await axios.post(
-        "http://localhost:3000/api/users/addDetails",
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+        const res = await axios.post(
+  "http://localhost:3000/api/users/addDetailsRegisters",
+  {
+    id: userId,
+    resumeURL: resumeURL,
+    title: data.title,
+    yoe: data.yoe,
+    skills: data.skills,
+    autoApply: data.autoApply,
+    github: data.github,
+    linkedin: data.linkedin,
+    portfolio: data.portfolio
+  }
+);
+
+
+       
+
 
       if (res.status === 200 || res.status === 201) {
         console.log("✅ Saved:", res.data);
@@ -134,6 +148,18 @@ const Onboarding = () => {
     } catch (err) {
       console.error("❌ Save failed:", err.response?.data || err.message);
       alert("Error saving details.");
+        console.log("hello",{
+        
+  id: userId,
+  resumeURL: resumeURL,
+  title: data.title,
+  yoe: data.yoe,
+  skills: data.skills,
+  autoApply: data.autoApply,
+  github: data.github,
+  linkedin: data.linkedin,
+  portfolio: data.portfolio
+});
     } finally {
       setSaving(false);
     }

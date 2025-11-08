@@ -4,36 +4,50 @@ import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("USER"); // Default login type
   const [error, setError] = useState("");
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
 
     try {
-      const response = await axios.post("http://localhost:3000/api/users/login", {
-        email,
-        password,
-      });
-console.log(response.data.data.role);
-      const { role, token } = response.data.data;
-
-      // Save token if needed
-      localStorage.setItem("authToken", token);
-      localStorage.setItem("userRole", role);
-
-      // Navigate based on role
+      // ✅ Select API endpoint dynamically based on role
+      let apiURL = "";
       if (role === "USER") {
-        navigate("/CandidateDashboard");
+        apiURL = "http://localhost:3000/api/users/login";
       } else if (role === "EMPLOYER") {
+        apiURL = "http://localhost:3000/api/employers/login";
+      } else if (role === "ADMIN") {
+        apiURL = "http://localhost:3000/api/admin/login";
+      }
+
+      const response = await axios.post(apiURL, { email, password });
+
+      console.log("Login response:", response.data);
+
+      const { token, role: userRole } = response.data.data;
+
+      // ✅ Store data in localStorage
+      localStorage.setItem("authToken", token);
+      localStorage.setItem("userRole", userRole);
+
+      // ✅ Navigate according to role
+      if (userRole === "USER") {
+        navigate("/CandidateDashboard");
+      } else if (userRole === "EMPLOYER") {
         navigate("/CompanyDashboard");
+      } else if (userRole === "ADMIN") {
+        navigate("/AdminDashboard");
       } else {
         setError("Invalid role detected.");
       }
     } catch (err) {
-      console.error(err);
-      setError("Invalid email or password.");
+      console.error("Login failed:", err);
+      setError("Invalid email or password. Please try again.");
     }
   };
 
@@ -45,6 +59,27 @@ console.log(response.data.data.role);
 
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm px-8 py-8 w-[380px] mx-auto">
           <form onSubmit={handleLogin} className="space-y-5">
+            {/* Role Selection Dropdown */}
+            <div className="text-left">
+              <label
+                htmlFor="role"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Login as
+              </label>
+              <select
+                id="role"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0a0a52] focus:border-[#0a0a52] transition"
+              >
+                <option value="USER">User</option>
+                <option value="EMPLOYER">Employer</option>
+                <option value="ADMIN">Admin</option>
+              </select>
+            </div>
+
+            {/* Email Input */}
             <div className="text-left">
               <label
                 htmlFor="email"
@@ -63,6 +98,7 @@ console.log(response.data.data.role);
               />
             </div>
 
+            {/* Password Input */}
             <div className="text-left">
               <label
                 htmlFor="password"
@@ -81,10 +117,12 @@ console.log(response.data.data.role);
               />
             </div>
 
+            {/* Error Message */}
             {error && (
               <p className="text-red-500 text-sm text-left">{error}</p>
             )}
 
+            {/* Submit Button */}
             <button
               type="submit"
               className="w-full bg-[#0a0a52] text-white py-2 rounded-md font-medium hover:bg-[#090941] transition"

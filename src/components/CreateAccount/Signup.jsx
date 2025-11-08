@@ -15,41 +15,45 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const SIGNUP_URL = "http://localhost:3000/api/users/register"; // <-- your signup API
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
+      // ✅ Decide API endpoint based on role
+      const SIGNUP_URL =
+        role === "Job Seeker"
+          ? "http://localhost:3000/api/users/register"
+          : "http://localhost:3000/api/employers/register";
+
       const finalRole = role === "Job Seeker" ? "USER" : "EMPLOYER";
 
+      // ✅ Send signup request
       const res = await axios.post(SIGNUP_URL, {
         name: formData.fullname,
         email: formData.email,
         password: formData.password,
         role: finalRole,
       });
-      console.log(res.data.data._id);
-      console.log(res.data.data.token);
-      console.log(res.data.data.role);
-      // Assuming backend returns { id, token, ... }
-      const userId = res.data.id || res.data.data._id;
-      const token = res.data.data.token;
 
-      // ✅ Save data to localStorage
+      console.log("Signup Response:", res.data);
+
+      const userId = res.data?.data?._id;
+      const token = res.data?.data?.token;
+
+      // ✅ Save to localStorage
       if (userId) localStorage.setItem("userId", userId);
       if (token) localStorage.setItem("authToken", token);
-      localStorage.setItem("userRole", finalRole); // ✅ Store role too
+      localStorage.setItem("userRole", finalRole);
 
       alert("Account created successfully!");
 
-      // Navigate based on role
+      // ✅ Redirect based on role
       if (finalRole === "USER") {
-        navigate("/onboarding"); // job seeker goes to onboarding
+        navigate("/onboarding"); // Job Seeker Onboarding
       } else {
-        navigate("/EmployerOnboarding"); // recruiter goes to company dashboard
+        navigate("/EmployerOnboarding"); // Recruiter Onboarding
       }
     } catch (err) {
       console.error(err);
@@ -64,11 +68,9 @@ const Signup = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#fff8f8]">
       <div className="text-center">
-        {/* Title */}
         <h1 className="text-3xl font-bold text-[#0a0a52] mb-2">AutoApply</h1>
         <p className="text-gray-500 mb-6">Create your account</p>
 
-        {/* Signup Form */}
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm px-8 py-8 w-[380px] mx-auto">
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* I am a... */}

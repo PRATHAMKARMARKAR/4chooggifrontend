@@ -14,23 +14,20 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ✅ Fetch user profile on mount
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-
-        const userId = localStorage.getItem("userId");
         const token = localStorage.getItem("authToken");
 
-        // 🧩 Replace with your real endpoint
         const res = await axios.get(
-          `http://localhost:3000/api/users/addDetailsRegister`,
+          "http://localhost:3000/api/users/getUserProfile",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
 
+        // ✅ Always set full user object
         setProfile(res.data.data || res.data);
       } catch (err) {
         console.error("Error fetching profile:", err);
@@ -43,7 +40,7 @@ const Profile = () => {
     fetchProfile();
   }, []);
 
-  // ⏳ Loading
+  // Loading
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-100 text-gray-700">
@@ -52,7 +49,7 @@ const Profile = () => {
     );
   }
 
-  // ❌ Error
+  // Error
   if (error) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-100 text-red-600">
@@ -61,13 +58,16 @@ const Profile = () => {
     );
   }
 
-  // ✅ Show Profile Data
+  // Destructure safely
+  const { name, email, resumeURL, skills, jobPreferences, links } = profile || {};
+  const { title, yoe } = jobPreferences || {};
+  const { github, linkedin, portfolio } = links || {};
+
+  // ✅ UI
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
       <DashboardNav role="candidate" />
 
-      {/* Main content */}
       <div className="flex-1 overflow-y-auto p-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -82,14 +82,14 @@ const Profile = () => {
           <Card>
             {/* Profile Header */}
             <div className="flex items-center gap-6 mb-8">
-              <div className="w-24 h-24 rounded-full bg-linear-to-br from-blue-600 to-indigo-400 flex items-center justify-center text-4xl font-bold text-white shadow-md">
-                {profile?.name?.charAt(0)?.toUpperCase() || "U"}
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-600 to-indigo-400 flex items-center justify-center text-4xl font-bold text-white shadow-md">
+                {name?.charAt(0)?.toUpperCase() || "U"}
               </div>
               <div>
                 <h2 className="text-2xl font-semibold text-gray-900">
-                  {profile?.name || "User Name"}
+                  {name || "User Name"}
                 </h2>
-                <p className="text-gray-500">{profile?.email || "user@example.com"}</p>
+                <p className="text-gray-500">{email || "user@example.com"}</p>
               </div>
             </div>
 
@@ -98,54 +98,54 @@ const Profile = () => {
               <div>
                 <p className="text-sm text-gray-500">GitHub</p>
                 <a
-                  href={profile?.github}
+                  href={github}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:underline break-all"
                 >
-                  {profile?.github || "Not provided"}
+                  {github || "Not provided"}
                 </a>
               </div>
 
               <div>
                 <p className="text-sm text-gray-500">LinkedIn</p>
                 <a
-                  href={profile?.linkedin}
+                  href={linkedin}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:underline break-all"
                 >
-                  {profile?.linkedin || "Not provided"}
+                  {linkedin || "Not provided"}
                 </a>
               </div>
 
               <div>
                 <p className="text-sm text-gray-500">Portfolio</p>
                 <a
-                  href={profile?.portfolio}
+                  href={portfolio}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:underline break-all"
                 >
-                  {profile?.portfolio || "Not provided"}
+                  {portfolio || "Not provided"}
                 </a>
               </div>
 
               <div>
                 <p className="text-sm text-gray-500">Title</p>
-                <p className="text-gray-900">{profile?.title || "Not specified"}</p>
+                <p className="text-gray-900">{title || "Not specified"}</p>
               </div>
 
               <div>
                 <p className="text-sm text-gray-500">Years of Experience</p>
-                <p className="text-gray-900">{profile?.yoe || "Not specified"}</p>
+                <p className="text-gray-900">{yoe || "Not specified"}</p>
               </div>
 
               <div>
                 <p className="text-sm text-gray-500">Skills</p>
                 <div className="flex flex-wrap gap-2 mt-1">
-                  {profile?.skills?.length ? (
-                    profile.skills.map((s, i) => (
+                  {skills?.length ? (
+                    skills.map((s, i) => (
                       <span
                         key={i}
                         className="px-3 py-1 bg-blue-100 border border-blue-300 rounded-full text-sm"
@@ -161,9 +161,9 @@ const Profile = () => {
 
               <div>
                 <p className="text-sm text-gray-500">Resume</p>
-                {profile?.resumeURL ? (
+                {resumeURL ? (
                   <a
-                    href={profile.resumeURL}
+                    href={resumeURL}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:underline break-all"

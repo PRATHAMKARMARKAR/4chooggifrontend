@@ -16,7 +16,7 @@ export default function DashboardNav({ role = "candidate" }) {
 
   // Navigation items
   const items = [
-    { label: "Dashboard", href: "/CandidateDashboard", icon: LayoutDashboard },
+    { label: "Dashboard", href: "/CompanyDashboard", icon: LayoutDashboard },
     { label: "Post Job", href: "/PostJob", icon: Briefcase },
     { label: "Applicants", href: "/Applicants", icon: Bookmark },
     { label: "Settings", href: "/SettingsJob", icon: Settings },
